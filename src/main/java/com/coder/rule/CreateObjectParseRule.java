@@ -18,11 +18,6 @@ public class CreateObjectParseRule implements ParseRule {
 
     private GirlFriendHandlerVersion2 girlFriendHandler;
 
-    public CreateObjectParseRule(String attributeNameForObjectType, ClassLoader loader, GirlFriendHandlerVersion2 girlFriendHandler) {
-        this.attributeNameForObjectType = attributeNameForObjectType;
-        this.loader = loader;
-        this.girlFriendHandler = girlFriendHandler;
-    }
 
     public CreateObjectParseRule(String attributeNameForObjectType, GirlFriendHandlerVersion2 girlFriendHandler) {
         this.attributeNameForObjectType = attributeNameForObjectType;

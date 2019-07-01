@@ -1,6 +1,7 @@
 package com.coder;
 
 import com.coder.rule.CreateObjectParseRule;
+import com.coder.rule.ParentChildRule;
 import com.coder.rule.ParseRule;
 import com.coder.rule.SetPropertiesParseRule;
 import org.xml.sax.Attributes;
@@ -12,8 +13,6 @@ import javax.xml.parsers.SAXParser;
 import javax.xml.parsers.SAXParserFactory;
 import java.io.IOException;
 import java.io.InputStream;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -27,6 +26,9 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class GirlFriendHandlerVersion2 extends DefaultHandler {
     private LinkedList<Object> stack = new LinkedList<>();
 
+    /**
+     * 规则定义。每个元素可以有多条规则，所以value是一个list。解析时，会按顺序调用各个规则
+     */
     private ConcurrentHashMap<String, List<ParseRule>> ruleMap = new ConcurrentHashMap<>();
 
     {
@@ -39,6 +41,7 @@ public class GirlFriendHandlerVersion2 extends DefaultHandler {
         rules = new ArrayList<>();
         rules.add(new CreateObjectParseRule("class",this));
         rules.add(new SetPropertiesParseRule(this));
+        rules.add(new ParentChildRule("setGirl", this));
 
         ruleMap.put("Girl",rules);
     }
@@ -62,18 +65,13 @@ public class GirlFriendHandlerVersion2 extends DefaultHandler {
     public void endElement(String uri, String localName, String qName) throws SAXException {
         System.out.println("endElement: " + qName + " It's the " + eventOrderCounter.getAndIncrement() + " one");
 
-        if ("Coder".equals(qName)){
-            Object o = stack.pop();
-            System.out.println(o);
-        }else if ("Girl".equals(qName)){
-            //弹出来的应该是girl
-            Object o = stack.pop();
-
-            //接下来获取到coder
-            Coder coder = (Coder) stack.peek();
-            coder.setGirl((Girl) o);
-
+        List<ParseRule> rules = ruleMap.get(qName);
+        if (rules != null) {
+            for (ParseRule rule : rules) {
+                rule.endElement();
+            }
         }
+
     }
 
     public static void main(String[] args) {
@@ -86,6 +84,8 @@ public class GirlFriendHandlerVersion2 extends DefaultHandler {
                     .getResourceAsStream("girlfriend.xml");
 
             parser.parse(inputStream, handler);
+            Object o = handler.stack.pop();
+            System.out.println(o);
         } catch (ParserConfigurationException | SAXException | IOException e) {
             e.printStackTrace();
         }

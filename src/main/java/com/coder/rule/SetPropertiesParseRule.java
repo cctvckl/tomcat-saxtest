@@ -1,6 +1,5 @@
 package com.coder.rule;
 
-import com.coder.GirlFriendHandler;
 import com.coder.GirlFriendHandlerVersion2;
 import com.coder.TwoTuple;
 import org.xml.sax.Attributes;
