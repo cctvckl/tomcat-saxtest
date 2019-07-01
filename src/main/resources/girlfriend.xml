@@ -1,7 +1,7 @@
 <?xml version='1.0' encoding='utf-8'?>
 
-<Coder name="xiaoming" sex="man" love="girl">
-    <Girl name="Catalina" height="170" breast="C++" legLength="150" isPregnant="true">
+<Coder name="xiaoming" sex="man" love="girl" class="com.coder.Coder">
+    <Girl class = "com.coder.Girl" name="Catalina" height="170" breast="C++" legLength="150" isPregnant="true">
 
 
         <!--<Connector port="8080" protocol="HTTP/1.1"-->

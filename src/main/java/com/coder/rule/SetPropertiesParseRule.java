@@ -1,52 +1,46 @@
-package com.coder;
+package com.coder.rule;
 
-import com.coder.rule.ParseRule;
+import com.coder.GirlFriendHandler;
+import com.coder.GirlFriendHandlerVersion2;
+import com.coder.TwoTuple;
 import org.xml.sax.Attributes;
-import org.xml.sax.SAXException;
-import org.xml.sax.helpers.DefaultHandler;
 
-import javax.xml.parsers.ParserConfigurationException;
-import javax.xml.parsers.SAXParser;
-import javax.xml.parsers.SAXParserFactory;
-import java.io.IOException;
-import java.io.InputStream;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicInteger;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Objects;
 
 /**
  * desc:
- * @author: caokunliang
- * creat_date: 2019/6/29 0029
- * creat_time: 11:06
+ *
+ * @author : caokunliang
+ * creat_date: 2019/7/1 0001
+ * creat_time: 11:33
  **/
-public class GirlFriendHandler  extends DefaultHandler {
-    private LinkedList<Object> stack = new LinkedList<>();
+public class SetPropertiesParseRule implements ParseRule {
+    private GirlFriendHandlerVersion2 girlFriendHandler;
 
-
-    private AtomicInteger eventOrderCounter = new AtomicInteger(0);
+    public SetPropertiesParseRule(GirlFriendHandlerVersion2 girlFriendHandler) {
+        this.girlFriendHandler = girlFriendHandler;
+    }
 
     @Override
-    public void startElement(String uri, String localName, String qName, Attributes attributes) throws SAXException {
-        System.out.println("startElement: " + qName + " It's the " + eventOrderCounter.getAndIncrement() + " one");
+    public void startElement(Attributes attributes) {
+        Object object = girlFriendHandler.peek();
 
-        if ("Coder".equals(qName)) {
+        setProperties(attributes,object);
+    }
 
-            Coder coder = new Coder();
+    @Override
+    public void body(String body) {
 
-            setProperties(attributes,coder);
+    }
 
-            stack.push(coder);
-        } else if ("Girl".equals(qName)) {
+    @Override
+    public void endElement() {
 
-            Girl girl = new Girl();
-            setProperties(attributes, girl);
-
-            Coder coder = (Coder) stack.peek();
-            coder.setGirl(girl);
-        }
     }
 
     private void setProperties(Attributes attributes, Object object) {
@@ -131,31 +125,4 @@ public class GirlFriendHandler  extends DefaultHandler {
         }
         return null;
     }
-
-    @Override
-    public void endElement(String uri, String localName, String qName) throws SAXException {
-        System.out.println("endElement: " + qName + " It's the " + eventOrderCounter.getAndIncrement() + " one");
-
-        if ("Coder".equals(qName)){
-            Object o = stack.pop();
-            System.out.println(o);
-        }
-    }
-
-    public static void main(String[] args) {
-        GirlFriendHandler handler = new GirlFriendHandler();
-
-        SAXParserFactory spf = SAXParserFactory.newInstance();
-        try {
-            SAXParser parser = spf.newSAXParser();
-            InputStream inputStream = ClassLoader.getSystemClassLoader()
-                    .getResourceAsStream("girlfriend.xml");
-
-            parser.parse(inputStream, handler);
-        } catch (ParserConfigurationException | SAXException | IOException e) {
-            e.printStackTrace();
-        }
-    }
-
-
 }
