@@ -37,7 +37,7 @@ public class BeanDefinitionRegistry {
 
 
     public BeanDefinitionRegistry(String configFileLocation) {
-        parser = new BeanDefinitionParser(configFileLocation, this);
+        parser = new BeanDefinitionParser(configFileLocation);
     }
 
 

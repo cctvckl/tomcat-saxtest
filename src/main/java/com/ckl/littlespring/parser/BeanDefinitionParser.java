@@ -30,15 +30,13 @@ public class BeanDefinitionParser {
 
     private String configFileLocation;
 
-    private BeanDefinitionRegistry beanDefinitionRegistry;
 
     private List<MyBeanDefiniton> myBeanDefinitonList = new ArrayList<>();
 
 
 
-    public BeanDefinitionParser(String configFileLocation, BeanDefinitionRegistry beanDefinitionRegistry) {
+    public BeanDefinitionParser(String configFileLocation) {
         this.configFileLocation = configFileLocation;
-        this.beanDefinitionRegistry = beanDefinitionRegistry;
         digester = new Digester();
     }
 
