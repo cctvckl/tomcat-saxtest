@@ -1,10 +1,18 @@
 package com.ckl.littlespring.core;
 
+import com.ckl.littlespring.MyPointParser;
+import com.ckl.littlespring.controller.TestController;
 import com.ckl.littlespring.parser.BeanDefinitionParser;
 import com.ckl.littlespring.parser.MyBeanDefiniton;
+import com.ckl.littlespring.parser.aop.AdvisorConfig;
+import com.ckl.littlespring.parser.aop.AspectConfig;
+import com.ckl.littlespring.parser.aop.PointCutConfig;
 import lombok.Data;
+import org.aspectj.weaver.tools.PointcutExpression;
 
 import java.lang.reflect.Field;
+import java.lang.reflect.Proxy;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -24,6 +32,11 @@ public class BeanDefinitionRegistry {
      * map：存储 bean的class-》bean实例
      */
     private Map<Class, Object> beanMapByClass = new ConcurrentHashMap<>();
+
+    /**
+     * map：存储 bean的name-》bean实例
+     */
+    private Map<String, Object> beanMapByName = new ConcurrentHashMap<>();
 
     /**
      * bean定义解析器
@@ -50,6 +63,7 @@ public class BeanDefinitionRegistry {
             hasBeanDefinitionParseOver = true;
         }
 
+
         /**
          * 初始化所有的bean，完成自动注入
          */
@@ -74,16 +88,12 @@ public class BeanDefinitionRegistry {
             return bean;
         }
 
-        //没查到的话，说明还没有，需要去生成bean，然后放进去
-        try {
-            bean = beanClazz.newInstance();
-        } catch (InstantiationException | IllegalAccessException e) {
-            e.printStackTrace();
-            return null;
-        }
+        bean = generateBeanInstance(beanClazz);
+
 
         // 先行暴露，解决循环依赖问题
         beanMapByClass.put(beanClazz, bean);
+        beanMapByName.put(beanDefiniton.getBeanName(), bean);
 
         //注入依赖
         List<Field> dependencysByField = beanDefiniton.getDependencysByField();
@@ -100,6 +110,50 @@ public class BeanDefinitionRegistry {
         }
 
         return bean;
+    }
+
+    private Object generateBeanInstance(Class<?> beanClazz) {
+        Object beanInstance = newBeanInstance(beanClazz);
+
+        // 如果没有切面配置
+        List<AdvisorConfig> advisorConfigs = parser.getAdvisorConfigs();
+        if (advisorConfigs == null || advisorConfigs.size() == 0){
+            return beanInstance;
+        }
+
+        Boolean bIsNeedProxyed = false;
+
+        MyPointParser parser = new MyPointParser();
+        for (AdvisorConfig advisorConfig : advisorConfigs) {
+            PointCutConfig pointCutConfig = advisorConfig.getPointCutConfig();
+            String expression = pointCutConfig.getExpression();
+            // 判断当前要生成的bean，是否匹配切面表达式
+            PointcutExpression pointcutExpression = parser.parsePointcutExpression(expression);
+            boolean b = pointcutExpression.couldMatchJoinPointsInType(beanClazz);
+            if (b){
+                bIsNeedProxyed = true;
+                break;
+            }
+        }
+
+        if (bIsNeedProxyed){
+            // 需要生成代理
+            return Proxy.newProxyInstance(beanClazz.getClassLoader(),beanClazz.getInterfaces(),
+                    new AopInvocationHandler(this,beanInstance,advisorConfigs));
+        }
+
+        return beanInstance;
+    }
+
+    private Object newBeanInstance(Class<?> beanClazz){
+        //没查到的话，说明还没有，需要去生成bean，然后放进去
+        try {
+            Object bean = beanClazz.newInstance();
+            return bean;
+        } catch (InstantiationException | IllegalAccessException e) {
+            e.printStackTrace();
+            return null;
+        }
     }
 
     private void autowireField(Class<?> beanClazz, Object bean, Field field) {
@@ -142,7 +196,29 @@ public class BeanDefinitionRegistry {
      * @return
      */
     public Object getBeanByType(Class clazz) {
-        return beanMapByClass.get(clazz);
+        Object o = beanMapByClass.get(clazz);
+        if (o != null) {
+            return o;
+        }
+
+        Collection<Object> beans = beanMapByClass.values();
+        for (Object bean : beans) {
+            Class<?> beanClass = bean.getClass();
+            if (clazz.isAssignableFrom(beanClass)){
+                return bean;
+            }
+        }
+        return null;
+    }
+
+    /**
+     * 根据名称获取bean对象
+     *
+     * @param beanName
+     * @return
+     */
+    public Object getBeanByName(String beanName) {
+        return beanMapByName.get(beanName);
     }
 
     private List<MyBeanDefiniton> getBeanDefinitions() {

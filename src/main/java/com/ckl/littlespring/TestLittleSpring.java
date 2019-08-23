@@ -1,5 +1,7 @@
 package com.ckl.littlespring;
 
+import com.ckl.littlespring.controller.ITestController;
+import com.ckl.littlespring.controller.TestController;
 import com.ckl.littlespring.core.BeanDefinitionRegistry;
 
 /**
@@ -21,6 +23,11 @@ public class TestLittleSpring {
 
         Object o1 = registry.getBeanByType(com.ckl.littlespring.Girl.class);
         System.out.println(o1);
+
+
+        ITestController testController = (ITestController) registry.getBeanByType(ITestController.class);
+        testController.test1();
+        System.out.println(testController);
 
 
     }
